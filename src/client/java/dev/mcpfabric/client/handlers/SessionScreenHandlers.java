@@ -161,6 +161,17 @@ public final class SessionScreenHandlers {
 				if (!canJoin(mc, ContainerHandlers.currentScreen())) {
 					throw new RpcException("busy", "The game is already connecting or loading; check get_screen.");
 				}
+				String address = ctx.optString("address", null);
+				if (address != null && !address.isBlank()) {
+					// Pawverse build: connect to any address, not only the server list.
+					ServerData server = new ServerData(address, address, ServerData.Type.OTHER);
+					ConnectScreen.startConnecting(new JoinMultiplayerScreen(new TitleScreen()), mc,
+							ServerAddress.parseString(address), server, false, null);
+					JsonObject o = new JsonObject();
+					o.addProperty("joining", address);
+					o.addProperty("note", "Joining runs in the background: poll get_screen until inWorld is true.");
+					return o;
+				}
 				String worldId = requested != null ? requested : lastWorldId;
 				if (worldId == null) {
 					throw RpcException.badRequest("No world was played in this game run: pass a worldId from list_worlds.");

@@ -646,8 +646,33 @@ export const TOOLS: ToolDef[] = [
       "Client-only, from the menus (title, multiplayer, disconnected, ... screens). Open a singleplayer world or connect to a server by worldId from list_worlds; without worldId, rejoin the world played last in this game run (after a kick, a server restart or a lost connection). Only servers in the server list, or the one played last, can be joined. Returns immediately: poll get_screen until inWorld is true.",
     inputSchema: {
       worldId: z.string().optional().describe('World id from list_worlds or get_screen, e.g. "sp:New World" or "mp:3f2a...". Omit to rejoin the last world.'),
+      address: z.string().optional().describe('Pawverse build: any server address (host:port) to connect to, even if it is not in the server list. Takes precedence over worldId.'),
     },
     annotations: { ...ACT, openWorldHint: true },
+  },
+
+  // ===== containers (Pawverse build) =========================================================
+  {
+    name: "get_container",
+    method: "container.state",
+    title: "Read the open container menu",
+    description:
+      "Client-only. Pawverse build. Read the open menu (chests and plugin menus alike): whether one is open, its title, type, size and every slot with item id and count. Slots below size are the menu's; the rest are the player's inventory.",
+    inputSchema: {},
+    annotations: READ,
+  },
+  {
+    name: "click_slot",
+    method: "container.click",
+    title: "Click a slot of the open menu",
+    description:
+      "Client-only. Pawverse build. Click one slot of the open menu like the mouse does: mode pickup (normal click; button 0 left, 1 right), quick_move (shift-click), throw (drop; button 1 drops the stack) or swap (button = hotbar slot 0-8). Returns the menu after the click; plugin menus may redraw a moment later, so read it again with get_container.",
+    inputSchema: {
+      slot: z.number().int().min(0).describe("Slot index from get_container."),
+      mode: z.enum(["pickup", "quick_move", "throw", "swap"]).optional().describe("Default pickup."),
+      button: z.number().int().min(0).max(8).optional().describe("Default 0 (left click)."),
+    },
+    annotations: ACT,
   },
 
   // ===== ui (client, needs enableUiControl) ==================================================
@@ -656,7 +681,7 @@ export const TOOLS: ToolDef[] = [
     method: "ui.widgets",
     title: "List the widgets of the open screen",
     description:
-      "Client-only, needs enableUiControl. List the widgets of the open screen in focus order: id, type (button, checkbox, cycle, slider, text_field, text, other), text, active, checked (checkboxes), value (text fields) and position in GUI coordinates. Works on the pause, title, death, options, advancements, statistics and confirmation screens, container screens and screens added by other mods; the world, server, chat, link, command block and other sensitive screens are refused (ui_refused). Custom-drawn parts such as inventory slots are not widgets: use the container tools for those.",
+      "Client-only, needs enableUiControl. List the widgets of the open screen in focus order: id, type (button, checkbox, cycle, slider, text_field, text, other), text, active, checked (checkboxes), value (text fields) and position in GUI coordinates. Pawverse build: works on every screen, including server dialogs (login, forms); only the Quit Game button is refused. Custom-drawn parts such as inventory slots are not widgets: use the container tools for those.",
     inputSchema: {},
     annotations: READ,
   },

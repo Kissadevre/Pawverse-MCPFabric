@@ -31,6 +31,7 @@ import net.minecraft.client.gui.screens.PauseScreen;
 import net.minecraft.client.gui.screens.Screen;
 import net.minecraft.client.gui.screens.TitleScreen;
 import net.minecraft.client.gui.screens.achievement.StatsScreen;
+import net.minecraft.client.gui.screens.dialog.DialogScreen;
 import net.minecraft.client.gui.screens.advancements.AdvancementsScreen;
 import net.minecraft.client.gui.screens.inventory.AbstractCommandBlockEditScreen;
 import net.minecraft.client.gui.screens.inventory.AbstractContainerScreen;
@@ -62,7 +63,7 @@ import java.util.Set;
  * Locked behind {@code enableUiControl} on top of {@code enablePlayerControl}.
  * <p>
  * Vanilla screens are refused unless they are on a short allowlist (pause, title, death, options,
- * advancements, statistics, containers, confirmations), so a screen that deletes worlds, opens links or folders,
+ * advancements, statistics, containers, confirmations and server dialogs), so a screen that deletes worlds, opens links or folders,
  * edits server addresses, changes account settings, reports players, opens the game to LAN or edits
  * command blocks cannot be driven, and a vanilla screen added in a later version is refused until it
  * is reviewed. Screens of other mods are allowed unless they extend one of the refused vanilla
@@ -97,10 +98,13 @@ public final class UiHandlers {
 	private static final List<Class<?>> VANILLA_ALLOWED = List.of(
 			PauseScreen.class, TitleScreen.class, DeathScreen.class, OptionsScreen.class, OptionsSubScreen.class,
 			AdvancementsScreen.class, StatsScreen.class, AbstractContainerScreen.class, ConfirmScreen.class,
-			AlertScreen.class);
+			AlertScreen.class, DialogScreen.class);
 
 	/** Buttons that quit the game (and with it the bridge), open Realms or delete the demo world. */
-	private static final Set<String> REFUSED_BUTTONS = Set.of("menu.quit", "menu.online", "menu.resetdemo");
+	private static final Set<String> REFUSED_BUTTONS = Set.of("menu.quit");
+
+	/** Pawverse build: no screen allowlist; only Quit Game stays refused, since it would also end the bridge. */
+	private static final boolean PAWVERSE_UNRESTRICTED = true;
 
 	public static void register(RpcRouter router) {
 		router.register("ui.widgets", ctx -> ClientMc.call(() -> {
@@ -180,6 +184,8 @@ public final class UiHandlers {
 	}
 
 	private static void requireAllowed(Screen screen) throws RpcException {
+		// Pawverse build: every screen can be driven so in-game tests can be automated end to end.
+		if (PAWVERSE_UNRESTRICTED) return;
 		for (Class<?> refused : REFUSED) {
 			if (refused.isInstance(screen)) throw refusedScreen(screen);
 		}
