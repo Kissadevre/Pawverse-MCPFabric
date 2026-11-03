@@ -62,6 +62,7 @@ import java.util.Set;
  * Generic control of the open screen (#14): list its widgets, click one, type into a text field.
  * Locked behind {@code enableUiControl} on top of {@code enablePlayerControl}.
  * <p>
+ * Pawverse build: the checks below are off (see {@code PAWVERSE_UNRESTRICTED}); upstream behaves as follows.
  * Vanilla screens are refused unless they are on a short allowlist (pause, title, death, options,
  * advancements, statistics, containers, confirmations and server dialogs), so a screen that deletes worlds, opens links or folders,
  * edits server addresses, changes account settings, reports players, opens the game to LAN or edits
@@ -76,8 +77,9 @@ import java.util.Set;
 public final class UiHandlers {
 	private UiHandlers() {}
 
-	private static final int MAX_WIDGETS = 200;
-	private static final int MAX_TEXT = 256;
+	private static final int MAX_WIDGETS = 5000;
+	/** Only limits what is reported back; what can be typed has no limit of its own. */
+	private static final int MAX_TEXT = 4096;
 
 	/**
 	 * Refused even when a mod's screen extends them: menus with their own tools, links, folders, servers,
@@ -100,10 +102,10 @@ public final class UiHandlers {
 			AdvancementsScreen.class, StatsScreen.class, AbstractContainerScreen.class, ConfirmScreen.class,
 			AlertScreen.class, DialogScreen.class);
 
-	/** Buttons that quit the game (and with it the bridge), open Realms or delete the demo world. */
+	/** Buttons that end the bridge: asked for explicitly (allowQuit), so a mistaken click does not close the game. */
 	private static final Set<String> REFUSED_BUTTONS = Set.of("menu.quit");
 
-	/** Pawverse build: no screen allowlist; only Quit Game stays refused, since it would also end the bridge. */
+	/** Pawverse build: no screen allowlist; Quit Game only needs allowQuit, since it also ends the bridge. */
 	private static final boolean PAWVERSE_UNRESTRICTED = true;
 
 	public static void register(RpcRouter router) {
@@ -118,6 +120,8 @@ public final class UiHandlers {
 			}
 			requireAllowed(screen);
 			o.addProperty("title", screen.getTitle().getString());
+			o.addProperty("screenClass", screen.getClass().getName());
+			o.addProperty("guiScale", ClientMc.mc().getWindow().getGuiScale());
 			o.addProperty("width", screen.width);
 			o.addProperty("height", screen.height);
 			JsonArray widgets = new JsonArray();
@@ -132,9 +136,9 @@ public final class UiHandlers {
 			Gates.uiControl();
 			Screen screen = openScreen();
 			AbstractWidget w = find(screen, ctx);
-			if (w.getMessage().getContents() instanceof TranslatableContents t && REFUSED_BUTTONS.contains(t.getKey())) {
+			if (!ctx.optBool("allowQuit", false) && w.getMessage().getContents() instanceof TranslatableContents t && REFUSED_BUTTONS.contains(t.getKey())) {
 				throw new RpcException("ui_refused", "This button (" + w.getMessage().getString()
-						+ ") quits the game, opens Realms or deletes the demo world, so it cannot be clicked from here.");
+						+ ") closes the game and with it the bridge. Pass allowQuit to click it anyway.");
 			}
 			if (!w.isActive()) throw new RpcException("inactive", "Widget \"" + w.getMessage().getString() + "\" is disabled.");
 			double fraction = Math.max(0, Math.min(1, ctx.optDouble("fraction", 0.5)));
@@ -158,7 +162,6 @@ public final class UiHandlers {
 		router.register("ui.setText", ctx -> ClientMc.call(() -> {
 			Gates.uiControl();
 			String text = ctx.getString("text");
-			if (text.length() > MAX_TEXT) throw RpcException.badRequest("text is longer than " + MAX_TEXT + " characters.");
 			Screen screen = openScreen();
 			AbstractWidget w = find(screen, ctx);
 			if (!(w instanceof EditBox box)) {

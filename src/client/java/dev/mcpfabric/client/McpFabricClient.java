@@ -45,6 +45,11 @@ public final class McpFabricClient {
 		ClientChatHandlers.register(router); // client variant of chat.send (speaks as local player)
 		SessionScreenHandlers.register(router); // menus: rejoin a world after a disconnect or a restart
 		UiHandlers.register(router); // generic screen control, behind enableUiControl
+		// Pawverse build: real keyboard and mouse input and what a player perceives. Only built for 26.3+.
+		//? if >=26.3 {
+		/*dev.mcpfabric.client.pawverse.PlayerInput.register(router);
+		dev.mcpfabric.client.pawverse.PlayerSenses.register(router);
+		*///?}
 
 		McpFabric.LOGGER.info("[mcpfabric] client handlers registered");
 	}
@@ -53,6 +58,10 @@ public final class McpFabricClient {
 	public static void onClientTick(Minecraft client) {
 		BotController.get().onClientTick(client);
 		SessionScreenHandlers.onClientTick(client);
+		//? if >=26.3 {
+		/*dev.mcpfabric.client.pawverse.PlayerInput.onClientTick(client);
+		dev.mcpfabric.client.pawverse.PlayerSenses.onClientTick(client);
+		*///?}
 	}
 
 	/** The game is closing: stop the bridge so the JVM can exit (issue #24). */

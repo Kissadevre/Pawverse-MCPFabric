@@ -13,6 +13,11 @@ sourceSets.configureEach { sourceSet ->
 }
 stonecutter.constants.match(loader, 'fabric', 'neoforge')
 
+// Pawverse build: real input and player senses use the input classes of 26.3; older nodes leave them out.
+if (!stonecutter.eval(project.minecraft_version as String, '>=26.3')) {
+	sourceSets.configureEach { sourceSet -> sourceSet.java.exclude('**/client/pawverse/**') }
+}
+
 // Minecraft's required Java version rises across the supported range (21 for 1.21.x; 25 for the
 // 26.x line). Each node declares java_version; the foojay resolver in settings.gradle provisions
 // the matching JDK automatically.

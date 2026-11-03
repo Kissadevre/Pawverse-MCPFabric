@@ -261,6 +261,9 @@ Then set `MCPFABRIC_TOKEN` in the server's environment.
 **navigation (client)** — `navigate_to` (A\*), `navigation_status`, `stop_navigation`
 **session (client)** — `get_screen`, `close_screen` (pause menu, chat, container; respawns on the death screen), `list_worlds`, `join_world` (rejoin after a kick, a server restart or a game restart)
 **ui (client, off by default: `enableUiControl`)** — `get_ui` (widgets of the open screen), `click_widget`, `set_text_field`
+**containers (client)** — `get_container`, `click_slot`, `drag_slots`
+**real input (client, Pawverse build, needs `enableUiControl`)** — `press_key`, `type_text`, `mouse_button`, `mouse_move`, `mouse_drag`, `mouse_scroll`, `release_all_input`, `get_input_state`, `get_keybinds`
+**senses (client, Pawverse build, any server)** — `get_hud`, `get_chat_lines`, `click_chat`, `get_command_suggestions`, `get_entities_client`, `get_block_client`, `get_sounds`, `interact_block`
 **events** — `poll_events` (recent damage, deaths, chat, spawns, player join/leave)
 
 **agent runtime** ([docs/AGENT.md](docs/AGENT.md)) — persistent per-world memory, goals, map and background jobs:

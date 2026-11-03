@@ -6,6 +6,17 @@ All notable changes to this project are documented here. The format is based on
 
 ## [Unreleased]
 
+### Added (Pawverse build, Minecraft 26.3; see PAWVERSE.md)
+- Real keyboard and mouse input through the game's own handlers: `press_key`, `type_text`, `mouse_button`,
+  `mouse_move`, `mouse_drag`, `mouse_scroll`, `release_all_input`, `get_input_state`, `get_keybinds`.
+- Player senses on any server: `get_hud`, `get_chat_lines`, `click_chat`, `get_command_suggestions`,
+  `get_entities_client`, `get_block_client`, `get_sounds`; events `title`, `actionbar` and `bossbar`.
+- `drag_slots`, `interact_block`; `hand` and `force` on the interaction tools.
+
+### Changed (Pawverse build)
+- `get_container` also reads names, tooltips, components, the cursor stack, slot positions and villager offers.
+- `click_slot` takes every click type and slot -999. `set_text_field` has no length limit. Quit Game takes `allowQuit`.
+
 ## [0.7.0] - 2026-10-15
 
 Fabric and NeoForge. Completes #14, thanks to @filiphsps.

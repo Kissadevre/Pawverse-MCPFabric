@@ -38,6 +38,10 @@ import java.util.Locale;
 public final class ContainerHandlers {
 	private ContainerHandlers() {}
 
+	/** Every click type of the game; each name matches a constant of ClickType / ContainerInput. */
+	private static final java.util.Set<String> CLICK_MODES = java.util.Set.of(
+			"pickup", "quick_move", "throw", "swap", "clone", "pickup_all", "quick_craft");
+
 	public static void register(RpcRouter router) {
 		router.register("container.open", ctx -> ClientMc.call(() -> {
 			requireControl();
@@ -78,10 +82,13 @@ public final class ContainerHandlers {
 			LocalPlayer p = ClientMc.player();
 			AbstractContainerMenu menu = p.containerMenu;
 			int slot = ctx.getInt("slot");
-			if (slot < 0 || slot >= menu.slots.size()) throw RpcException.badRequest("Slot out of range 0-" + (menu.slots.size() - 1) + ": " + slot);
+			// -999 is a click outside the window, which drops the carried stack.
+			if (slot != AbstractContainerMenu.SLOT_CLICKED_OUTSIDE && (slot < 0 || slot >= menu.slots.size())) {
+				throw RpcException.badRequest("Slot out of range 0-" + (menu.slots.size() - 1) + " or -999 (outside): " + slot);
+			}
 			String mode = ctx.optString("mode", "pickup").toLowerCase(Locale.ROOT);
-			if (!mode.equals("pickup") && !mode.equals("quick_move") && !mode.equals("throw") && !mode.equals("swap")) {
-				throw RpcException.badRequest("mode must be pickup, quick_move, throw or swap.");
+			if (!CLICK_MODES.contains(mode)) {
+				throw RpcException.badRequest("mode must be one of " + CLICK_MODES + ".");
 			}
 			InventoryHandlers.containerClick(ClientMc.gameMode(), menu.containerId, slot, ctx.optInt("button", 0), mode, p);
 			return state(p);
@@ -169,7 +176,7 @@ public final class ContainerHandlers {
 	}
 
 	/** The open screen. It moved from {@code Minecraft.screen} to {@code Gui.screen()} in 26.2. */
-	static Screen currentScreen() {
+	public static Screen currentScreen() {
 		//? if <26.2 {
 		return Minecraft.getInstance().screen;
 		//?} else

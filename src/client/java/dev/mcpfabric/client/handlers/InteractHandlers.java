@@ -124,7 +124,7 @@ public final class InteractHandlers {
 			JsonObject o = new JsonObject();
 			// The server refuses clicks beyond the interaction range: do not act (or report a client
 			// prediction) for them.
-			if (!aim.inReach()) {
+			if (!aim.inReach() && !ctx.optBool("force", false)) {
 				o.addProperty("result", "OUT_OF_REACH");
 				o.addProperty("placed", false);
 				o.addProperty("note", String.format(java.util.Locale.ROOT,
@@ -149,7 +149,7 @@ public final class InteractHandlers {
 						pos.getY() + 0.5 + face.getStepY() * 0.5,
 						pos.getZ() + 0.5 + face.getStepZ() * 0.5);
 				BlockHitResult hit = new BlockHitResult(hitLoc, face, pos, false);
-				InteractionResult r = gm.useItemOn(p, InteractionHand.MAIN_HAND, hit);
+				InteractionResult r = gm.useItemOn(p, hand(ctx.optString("hand", "main")), hit);
 				swingUse(p);
 				return String.valueOf(r);
 			});
@@ -176,20 +176,21 @@ public final class InteractHandlers {
 			requireControl();
 			MultiPlayerGameMode gm = ClientMc.gameMode();
 			LocalPlayer p = ClientMc.player();
+			InteractionHand hand = hand(ctx.optString("hand", "main"));
 			HitResult crosshair = ClientMc.mc().hitResult;
 			// Like a vanilla right-click: the entity or block under the crosshair first, the item on its own last.
 			if (crosshair instanceof EntityHitResult entityHit && ClientMc.canReachEntity(p, entityHit.getEntity(), 0.0)) {
-				InteractionResult result = interact(gm, p, entityHit.getEntity(), entityHit);
+				InteractionResult result = interact(gm, p, entityHit.getEntity(), entityHit, hand);
 				if (result.consumesAction()) return useResult("entity", result);
 			} else if (crosshair instanceof BlockHitResult blockHit && crosshair.getType() == HitResult.Type.BLOCK) {
-				InteractionResult result = gm.useItemOn(p, InteractionHand.MAIN_HAND, blockHit);
+				InteractionResult result = gm.useItemOn(p, hand, blockHit);
 				if (result.consumesAction()) {
 					swingUse(p);
 					return useResult("block", result);
 				}
 				if (InteractionResult.FAIL.equals(result)) return useResult("block", result);
 			}
-			return useResult("air", gm.useItem(p, InteractionHand.MAIN_HAND));
+			return useResult("air", gm.useItem(p, hand));
 		}));
 
 		router.register("interact.attackEntity", ctx -> {
@@ -201,7 +202,7 @@ public final class InteractHandlers {
 				return new EntityAim(ClientMc.level().dimension(), e.getUUID(), e.getName().getString(),
 						ClientMc.canReachEntity(p, e, ENTITY_REACH_BUFFER));
 			});
-			if (!aim.inReach()) return outOfReach(aim);
+			if (!aim.inReach() && !ctx.optBool("force", false)) return outOfReach(aim);
 			// The client only predicts the hit: with an integrated server, report the target's health there.
 			ServerLevel level = ServerSide.level(aim.dimension());
 			Float before = level == null ? null : ServerSide.call(level, () -> serverHealth(level, aim.entity()));
@@ -237,13 +238,13 @@ public final class InteractHandlers {
 			LocalPlayer p = ClientMc.player();
 			Entity e = findEntity(ctx.getString("uuid"));
 			// The server ignores interactions beyond its range: do not send (or report a prediction for) them.
-			if (!ClientMc.canReachEntity(p, e, ENTITY_REACH_BUFFER)) {
+			if (!ctx.optBool("force", false) && !ClientMc.canReachEntity(p, e, ENTITY_REACH_BUFFER)) {
 				return outOfReach(new EntityAim(ClientMc.level().dimension(), e.getUUID(), e.getName().getString(), false));
 			}
 			//? if <26.1 {
-			InteractionResult result = gm.interact(p, e, InteractionHand.MAIN_HAND);
+			InteractionResult result = gm.interact(p, e, hand(ctx.optString("hand", "main")));
 			//?} else
-			/*InteractionResult result = gm.interact(p, e, new net.minecraft.world.phys.EntityHitResult(e), InteractionHand.MAIN_HAND);*/
+			/*InteractionResult result = gm.interact(p, e, new net.minecraft.world.phys.EntityHitResult(e), hand(ctx.optString("hand", "main")));*/
 			JsonObject o = new JsonObject();
 			o.addProperty("result", String.valueOf(result));
 			return o;
@@ -303,12 +304,20 @@ public final class InteractHandlers {
 	}
 
 	/** Entity right-click. Before 26.1 vanilla tried the precise hit position first. */
-	private static InteractionResult interact(MultiPlayerGameMode gm, LocalPlayer p, Entity e, EntityHitResult hit) {
+	private static InteractionResult interact(MultiPlayerGameMode gm, LocalPlayer p, Entity e, EntityHitResult hit, InteractionHand hand) {
 		//? if <26.1 {
-		InteractionResult at = gm.interactAt(p, e, hit, InteractionHand.MAIN_HAND);
-		return at.consumesAction() ? at : gm.interact(p, e, InteractionHand.MAIN_HAND);
+		InteractionResult at = gm.interactAt(p, e, hit, hand);
+		return at.consumesAction() ? at : gm.interact(p, e, hand);
 		//?} else
-		/*return gm.interact(p, e, hit, InteractionHand.MAIN_HAND);*/
+		/*return gm.interact(p, e, hit, hand);*/
+	}
+
+	public static InteractionHand hand(String name) throws RpcException {
+		return switch (name.toLowerCase(java.util.Locale.ROOT)) {
+			case "main" -> InteractionHand.MAIN_HAND;
+			case "off" -> InteractionHand.OFF_HAND;
+			default -> throw RpcException.badRequest("hand must be main or off.");
+		};
 	}
 
 	private static JsonObject useResult(String target, InteractionResult result) {
