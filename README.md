@@ -1,43 +1,66 @@
 <div align="center">
   <img src="docs/assets/mcpfabric-icon-512.png" alt="MCP Fabric grass block, AI network, and bridge emblem" width="180" height="180">
 
-# MCP Fabric — AI control for Minecraft
+# Pawverse MCPFabric
 
-**Let Claude and other MCP clients see, understand, and play Minecraft through 50+ tools.**
+**A fork of [MCP Fabric](https://github.com/denfry/mcpfabric) that lets an AI test Minecraft the way a player uses it, through 80+ tools.**
 
-[![Build](https://github.com/denfry/mcpfabric/actions/workflows/build.yml/badge.svg)](https://github.com/denfry/mcpfabric/actions/workflows/build.yml)
-[![Modrinth downloads](https://img.shields.io/modrinth/dt/eA63YgUh?logo=modrinth&label=Modrinth)](https://modrinth.com/mod/mcpfabric)
-[![GitHub stars](https://img.shields.io/github/stars/denfry/mcpfabric?logo=github&style=flat)](https://github.com/denfry/mcpfabric/stargazers)
-[![License: MIT](https://img.shields.io/github/license/denfry/mcpfabric)](LICENSE)
-[![Discord](https://img.shields.io/badge/Discord-Join%20the%20community-5865F2?logo=discord&logoColor=white)](https://discord.gg/mVZcNUAGZt)
-[![M8ven Score](https://m8ven.ai/badge/mcp/denfry-mcpfabric-1vn4r1?v=6c5af3df95ffb27c03fbe8d4881feb91)](https://m8ven.ai/mcp/denfry-mcpfabric-1vn4r1?s=readme)
+[![License: MIT](https://img.shields.io/badge/license-MIT-blue)](LICENSE)
+[![Upstream: denfry/mcpfabric](https://img.shields.io/badge/upstream-denfry%2Fmcpfabric-informational?logo=github)](https://github.com/denfry/mcpfabric)
 
-[Download on Modrinth](https://modrinth.com/mod/mcpfabric) ·
+[What this fork adds](#what-this-fork-adds) ·
 [Installation](#quick-start) ·
-[Tools](#tools-50) ·
-[Security](SECURITY.md) ·
-[Telemetry](docs/TELEMETRY.md) ·
-[Contributing](CONTRIBUTING.md)
+[Tools](#tools-80) ·
+[Fork notes](PAWVERSE.md) ·
+[Security](SECURITY.md)
 </div>
 
+> [!NOTE]
+> This is an independent fork maintained by [Zibuu](https://zibuu.net) for testing the Pawverse plugins.
+> It is not affiliated with or supported by the original project. All credit for MCP Fabric goes to
+> [denfry](https://github.com/denfry) and its contributors; it stays under the MIT license.
+
 MCP Fabric is a local-first Minecraft mod and Model Context Protocol server that gives AI agents
-structured observation and controlled access to Minecraft. It works on both the client and
-dedicated servers across Minecraft 1.21.1–1.21.11 and 26.1–26.3, on Fabric and NeoForge.
+structured observation and controlled access to Minecraft. This fork starts from upstream 0.7.0 and
+widens what the agent can do and perceive as a player, on any server.
 
 - **Play through natural language:** move, look, navigate, mine, build, fight, and use inventory.
 - **See the game:** inspect blocks, entities, players, status, chat, events, and screenshots.
 - **Operate servers:** run commands, edit worlds, manage entities, and administer players.
 - **Bring your own AI:** works with Claude Desktop, Claude Code, and other MCP-compatible hosts.
 - **Stay local by default:** loopback-only HTTP bridge, bearer authentication, and capability gates.
-- **No hidden telemetry:** the current Fabric release sends no usage analytics.
+- **No hidden telemetry:** the mod sends no usage analytics.
+
+## What this fork adds
+
+| | MCP Fabric 0.7.0 | This fork |
+|---|---|---|
+| **Keyboard and mouse** | Movement keys and widget clicks | Any key or binding, typing, and mouse clicks, drags and wheel through the game's own input handlers |
+| **Screens** | Allowlist; custom-drawn parts unreachable | Every screen, including creative tabs, signs and plugin dialogs |
+| **Hands and clicks** | Main hand; right click where the tool decides | Either hand, exact block clicks, held attack and use, clicks in the air |
+| **Menus** | Item id and count | Names, lore, components, cursor stack, slot positions, villager offers; every click type and drags |
+| **HUD on a remote server** | Not readable | Action bar, titles, boss bars, sidebar and tab list, also as events |
+| **Chat** | Plain text | Click actions, hover text and tab completion, including plugin suggestions |
+| **World on a remote server** | Block ids and basic entity data | Block states, signs, entity names and equipment, text displays, sounds |
+| **Joining servers** | Saved server list | Any address |
+
+The server still has the last word: permissions, reach and anti-cheat answer as they would to a player,
+which is what makes the tests worth having. The bridge keeps its token and loopback binding.
+[PAWVERSE.md](PAWVERSE.md) lists every tool, what stays limited and the known gaps.
+
+**Where upstream goes further:** this fork targets **Minecraft 26.3 only**, while upstream supports 1.21.1
+through 26.3 on both loaders, and it does not include what upstream added after 0.7.0, such as the supervised
+mode of 0.8.0. If you need those, use [the original project](https://github.com/denfry/mcpfabric).
 
 ## Quick start
 
 1. Install [Fabric Loader](https://fabricmc.net/use/installer/) and
    [Fabric API](https://modrinth.com/mod/fabric-api), or [NeoForge](https://neoforged.net/).
-2. Download the jar matching your Minecraft version and loader from
-   [Modrinth](https://modrinth.com/mod/mcpfabric/versions) and place it in `mods/`.
-3. Launch Minecraft once, then copy `token` from `config/mcpfabric.config.json`.
+2. Build the jar with `./gradlew :26.3-neoforge:build -x test` and copy it from
+   `versions/26.3-neoforge/build/libs/` to `mods/`. The jars on Modrinth are upstream's and do not have this
+   fork's tools.
+3. Launch Minecraft once, then copy `token` from `config/mcpfabric.config.json`. Set `enableUiControl` to
+   `true` there for the real input tools.
 4. Build the MCP server with `cd mcp-server && npm ci && npm run build`.
 5. Add it to your MCP client using the [ready-to-copy examples](#3-connect-to-claude).
 
@@ -71,6 +94,10 @@ effects / weather / time) go through the command dispatcher with output capture.
 ---
 
 ## Supported Minecraft versions
+
+> [!IMPORTANT]
+> This fork is built and tested on **26.3 NeoForge** only; 26.3 Fabric compiles but has not been run in the
+> game. The rest of this section describes the upstream source tree it inherits.
 
 A single source tree targets many Minecraft versions using
 [Stonecutter](https://stonecutter.kikugie.dev/). Each version below ships its own jar:
@@ -174,8 +201,7 @@ printed to logs.
 The `enable*` flags let you switch off dangerous capability groups. `enableUiControl` is the one
 that starts off: it lets the model click buttons and type into text fields of game screens
 (`get_ui`, `click_widget`, `set_text_field`), which reaches settings and actions the other tools
-never expose. Vanilla screens are limited to the pause, title, death, options, advancements,
-statistics, confirmation and container screens, but screens added by other mods are not restricted, so turn it on
+never expose. In this fork every screen can be driven, and it also unlocks the real keyboard and mouse tools, so turn it on
 only when you need it, for example to test a mod's UI. It also needs `enablePlayerControl`. `requireAuth` (default `true`)
 gates every request behind the bearer token — only set it to `false` if you understand that it
 removes the sole authentication on an operator-level bridge. Keep `host` on `127.0.0.1` unless you
@@ -244,7 +270,7 @@ Then set `MCPFABRIC_TOKEN` in the server's environment.
 
 ---
 
-## Tools (50+)
+## Tools (80+)
 
 **info** — `get_status`, `list_capabilities`
 **world (read)** — `get_block`, `get_blocks_region`, `find_blocks`, `get_time_and_weather`, `list_dimensions`, `raycast`
